@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  phone           String?   @unique
+  password        String
+  displayName     String
+  profilePicture  String?
+  status          String?   @default("Hey there! I am using Chat App")
+  isActive        Boolean   @default(true)
+  lastSeen        DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  sentMessages    Message[] @relation("sender")
+  receivedMessages Message[] @relation("receiver")
+  createdGroups   Group[]   @relation("groupCreator")
+  groupMemberships GroupMember[]
+  blockedUsers    BlockedUser[] @relation("blocker")
+  blockedByUsers  BlockedUser[] @relation("blocked")
+
+  @@map("users")
+}
+
+model Message {
+  id              String    @id @default(cuid())
+  content         String
+  senderId        String
+  sender          User      @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId      String?
+  receiver        User?     @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  groupId         String?
+  group           Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  status          MessageStatus @default(SENT)
+  mediaUrl        String?
+  mediaType       String?   // "image", "video", "audio", "document"
+  mediaSize       Int?      // Size in bytes
+  mediaDuration   Int?      // Duration for audio/video in seconds
+  isEdited        Boolean   @default(false)
+  editedAt        DateTime?
+  deletedByIds    String[]  @default([]) // Track who deleted this message
+  deletedAt       DateTime? // Soft delete
+  replyToId       String?   // For message replies
+  replyTo         Message?  @relation("replies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies         Message[] @relation("replies")
+  isForwarded     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([groupId])
+  @@index([replyToId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+model Group {
+  id              String    @id @default(cuid())
+  name            String
+  profilePicture  String?
+  description     String?
+  createdBy       String
+  creator         User      @relation("groupCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  messages        Message[]
+  members         GroupMember[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  id              String    @id @default(cuid())
+  groupId         String
+  group           Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role            GroupMemberRole @default(MEMBER)
+  joinedAt        DateTime  @default(now())
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+  @@map("group_members")
+}
+
+enum GroupMemberRole {
+  ADMIN
+  MEMBER
+}
+
+model BlockedUser {
+  id              String    @id @default(cuid())
+  blockerId       String
+  blocker         User      @relation("blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId       String
+  blocked         User      @relation("blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+  @@map("blocked_users")
+}

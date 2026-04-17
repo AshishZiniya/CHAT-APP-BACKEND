@@ -1,0 +1,44 @@
+# Dependencies
+node_modules
+/.pnp
+.pnp.js
+
+# Prisma
+/prisma/migrations
+.env
+.env.local
+.env.*.local
+
+# Testing
+/coverage
+/.jest
+
+# Build
+dist
+build
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
